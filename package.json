@@ -1,0 +1,28 @@
+{
+  "name": "clusterizer",
+  "version": "0.0.0",
+  "author": "Mike Smiley <mikesmiley@me.com>",
+  "url": "https://github.com/msmiley/clusterizer",
+  "main": "./lib",
+  "repository": "msmiley/clusterizer.git",
+  "scripts": {
+    "docs": "cake docs",
+    "prepublish": "cake build test docs",
+    "test": "cake build test"
+  },
+  "devDependencies": {
+    "docco": "*",
+    "coffee-script": "^1.8.0",
+    "jasmine-node": "^1.14.5"
+  },
+  "dependencies": {
+    "metrics-timer": "^0.1.0",
+    "node-uuid": "^1.4.2"
+  },
+  "keywords": [
+    "cluster",
+    "workers",
+    "multiprocess"
+  ],
+  "license": "MIT"
+}
