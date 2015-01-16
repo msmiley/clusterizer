@@ -1,36 +1,53 @@
 
 uuid = require 'node-uuid'
-{ EventEmitter } = require 'events'
 timer = require 'metrics-timer'
 
 #
-# Base class for all clusterized modules. Provides facilities for modules to log,
-# throw errors, time their execution, etc.
+# Base class for all clusterized modules. Provides facilities
+# for modules to log, throw errors, time their execution, etc.
 #
-class Clusterized extends EventEmitter
-  # @property [Number] The execution interval in milliseconds
-  averageT: undefined
-  defaultSleep: 5000
-
+class Clusterized
   constructor: ->
-    # save off the class name
-    @NAME = @constructor.name
-    @sleep = @defaultSleep
-    @averageT = null
+    # set process name to match the name given to clusterizer
+    @name = process.env.name
+    process.title = "#{@name}"
 
-    # let module initialize
-    @init()
+    # get the name of the module this process will run
+    @moduleName = process.env.module
+    @moduleCallback = process.env.callback
+    @moduleMode = process.env.mode
+    @moduleSleep = process.env.interval
+
+    @reset()
+
+    # start the module
+    @start @module[@moduleCallback]
+
+
+  reset: ->
+    # state flag
+    @stopped = true
+    # load the module
+    @module = @loadModule
+
+
+  loadModule: (name) ->
+    # try to load the module
+    try
+      return require name
+    catch e
+      console.error "Error loading Module: #{name}"
 
   #
-  # Start Module
+  # Start the Module
   #
-  start: ->
+  start: (callback) ->
     @log "starting"
 
     @stopped = false
 
     # private function for one iteration, used to wrap setTimeout to allow asynchronicity
-    # while ensuring there is a sleep period and a chance to change @stopped
+    # while ensuring there is a sleep period
     iterate = =>
       @log "sleeping for: #{@sleep} ms"
       setTimeout =>
@@ -41,97 +58,25 @@ class Clusterized extends EventEmitter
           @log "starting run: #{uid}"
           timer.start(uid)
           # call analysis module with a callback for it to call on exit
-          @process (err) =>
+          callback (err) =>
             elapsed = timer.stop(uid)
             if err
               @error "error on run #{uid}: #{err} after #{elapsed}ms"
             else
               @log "completed run #{uid}, took: #{elapsed}ms"
             iterate()
-      , @sleep
+      , @moduleSleep
 
     # kick off iteration loop
     iterate()
 
   #
-  # Stop Module
+  # Stop Module and exit the process
   #
   stop: ->
     @stopped = true
+    process.exit()
 
-  #
-  # Notification of an event for this Module.
-  # @param msg [Object] The event object received for this Module
-  #
-  notify: (msg) ->
-    if msg.name is @NAME and msg.conf and msg.value
-      @log "changing conf: #{msg.conf} = #{msg.value}"
-      @conf[msg.conf] = msg.value
-
-  #
-  # Post event from module to master
-  # @param tag [String] Tag representing the type/meaning of data
-  # @param data [Object] Any object to send
-  #
-  post: (regarding, level, message, detail) ->
-    @emit 'post',
-      tag: 'event'
-      data:
-        date: new Date()
-        src: @NAME
-        re: regarding
-        level: level
-        msg: message
-        detail: detail
-
-  #
-  # Send data from module
-  # @param tag [String] Tag representing the type/meaning of data
-  # @param data [Object] Any object to send
-  #
-  send: (tag, data) ->
-    @emit 'send',
-      tag: tag
-      data: data
-
-  #
-  # Log message
-  # @param msg [String] The log message
-  #
-  log: (msg) ->
-    @emit 'log', "#{@NAME}: #{msg}"
-  
-  #
-  # Throw an error
-  # @param msg [String] The error message
-  #
-  error: (msg) ->
-    @emit 'error', "#{@NAME}: #{msg}"
-  
-  #
-  # Start the execution timer. Timer is provided
-  # by the Analytics base class as a convenience to
-  # analysis modules. An id must be provided to track
-  # concurrent timers and can be any Object.
-  # @param id [Object] The id of this timer
-  #
-  tic: (id) ->
-    timer.start(id)
-  
-  #
-  # Stop the execution timer. Timer is provided
-  # by the Analytics base class as a convenience to
-  # analysis modules. The id provided must have been already used
-  # with a corresponding tic() call.
-  # @param id [Object] The id of the running timer
-  #
-  toc: (id) ->
-    try
-      timer.stop(id)
-    catch e
-      if e.name is "TypeError" # handle this one since it's a result of no tic() for this toc()
-        throw new Error("toc(#{id}) called without previously calling tic(#{id}), or toc(#{id}) has already been called")
-      throw e
 
 #
 # Exports
