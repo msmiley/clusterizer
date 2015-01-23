@@ -4,6 +4,6 @@
 
 class Module2 extends Clusterized
 
-  process2: (callback) ->
-    console.log "I'm Module2"
+  process: (callback) ->
+    @log "I'm Module2"
     callback()
