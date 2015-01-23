@@ -1,5 +1,4 @@
 
-uuid = require 'node-uuid'
 timer = require 'metrics-timer'
 
 #
@@ -7,36 +6,7 @@ timer = require 'metrics-timer'
 # for modules to log, throw errors, time their execution, etc.
 #
 class Clusterized
-  constructor: ->
-    # set process name to match the name given to clusterizer
-    @name = process.env.name
-    process.title = "#{@name}"
 
-    # get the name of the module this process will run
-    @moduleName = process.env.module
-    @moduleCallback = process.env.callback
-    @moduleMode = process.env.mode
-    @moduleSleep = process.env.interval
-
-    @reset()
-
-    # start the module
-    @start @module[@moduleCallback]
-
-
-  reset: ->
-    # state flag
-    @stopped = true
-    # load the module
-    @module = @loadModule
-
-
-  loadModule: (name) ->
-    # try to load the module
-    try
-      return require name
-    catch e
-      console.error "Error loading Module: #{name}"
 
   #
   # Start the Module
