@@ -4,8 +4,8 @@
 
 class Module1 extends Clusterized
   constructor: ->
-    @on 'test.event', (msg) ->
-      @log msg
+    @on 'echo', (msg) ->
+      @send 'echo', msg
 
   process: (callback) ->
     @log "I'm Module1"

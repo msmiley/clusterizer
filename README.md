@@ -22,7 +22,7 @@ $ npm install clusterizer
 
 ## Usage
 
-Look at test_modules/module1.coffee for an example module. Modules need to inherit from Clusterized and implement at least a `process(callback)` function.
+Look at test_modules/module1.coffee for an example module. Modules need to inherit from Clusterized and implement at least a `process(callback)` function. The class name (or constructor function name if in js) is irrelevant as long as it is exported as shown below.
 
 ```coffee
 { Clusterized } = require 'clusterizer'
@@ -31,23 +31,60 @@ class Worker extends Clusterized
   process: (callback) ->
     # do something
     callback(err)
+
+module.exports = Worker
 ```
 
-Then simply instantiate a `Clusterizer` in your code. See the example `main` function in `clusterizer.coffee`.
+Then simply instantiate a `Clusterizer` in your code. See the example `main` function in `clusterizer.coffee`. Use `.isMaster` to prevent your other code from running in every process.
 
 ```coffee
 clusterizer = new Clusterizer
   logging: true
   dir: "../test_modules"
 
-clusterizer.broadcast "test.event", "test message"
-clusterizer.send "module1", "test.event", "test message"
+if clusterizer.isMaster
+  # start all
+  clusterizer.start()
 
-clusterizer.on 'message' ->
+  # example broadcast
+  setTimeout ->
+    clusterizer.broadcast "echo", "test broadcasted message"
+  , 2000
+
+  # example message to single module
+  setTimeout ->
+    clusterizer.send "module2", "echo", "call me back"
+  , 4000
+
+  # example message handler
+  clusterizer.on 'echo', (msg, module) ->
+    console.log "\nGot #{msg} from #{module}\n"
+
+  # stops module1
+  setTimeout ->
+    clusterizer.stop('module1')
+  , 6000
+
+  # stops all
+  setTimeout ->
+    clusterizer.stop()
+  , 6000
+
+  # restart all
+  setTimeout ->
+    clusterizer.start()
+  , 8000
+
+  # kill all
+  setTimeout ->
+    clusterizer.kill()
+  , 10000
+
+  # ... your code ...
 
 ```
 
-More advanced scheduling coming soon.
+More advanced process scheduling coming soon.
 
 ## License
 

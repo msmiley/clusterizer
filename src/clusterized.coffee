@@ -17,7 +17,7 @@ class Clusterized extends EventEmitter
     @log "module #{@name} needs to have a process(callback) function"
 
   #
-  # Start the Module
+  # Start the Module for scheduled execution
   #
   start: ->
     @log "starting #{@name}"
@@ -30,11 +30,8 @@ class Clusterized extends EventEmitter
     # private function for one iteration, used to wrap setTimeout to allow asynchronicity
     # while ensuring there is a sleep period
     iterate = =>
-      @log "sleeping for: #{@moduleSleep} ms"
-      setTimeout =>
-        if @stopped
-          @log "stopped processing."
-        else if @processing
+      unless @stopped
+        if @processing
           @log "skipping iteration because process() is already running"
         else
           uid = uuid.v1() # uid for this iteration
@@ -49,8 +46,10 @@ class Clusterized extends EventEmitter
               @error "error on run #{uid}: #{err} after #{elapsed}ms"
             else
               @log "completed run #{uid}, took: #{elapsed}ms"
-            iterate()
-      , @moduleSleep
+            @log "sleeping for: #{@moduleSleep} ms"
+            setTimeout ->
+              iterate()
+            , @moduleSleep
 
     # kick off iteration loop
     iterate()
@@ -59,8 +58,9 @@ class Clusterized extends EventEmitter
   # Stop Module and exit the process
   #
   stop: ->
-    @stopped = true
-    process.exit()
+    unless @stopped
+      @stopped = true
+      @log "#{@name} stopped processing"
 
   #
   # Perform one iteration when this function is called
@@ -94,10 +94,14 @@ class Clusterized extends EventEmitter
   #
   recv: (msg) ->
     switch msg.event
+      when 'clusterized.start'
+        @start()
       when 'clusterized.kick'
         @kick()
       when 'clusterized.stop'
         @stop()
+      when 'clusterized.kill'
+        process.exit()
       else # self-emit for user's code
         @emit msg.event, msg.message
 
@@ -105,7 +109,7 @@ class Clusterized extends EventEmitter
   # Provide a way for Clusterized module to get logging back to Master
   #
   log: (msg) ->
-    @send 'log', msg
+    @send 'clusterized.log', msg
 
 
 #
