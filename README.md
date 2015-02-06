@@ -118,6 +118,8 @@ Use `setAgenda` to define a fuzzy execution frequency. Clusterizer uses [Agenda]
 clusterizer.setAgenda 'localhost:27017/test', '3 seconds', 'module1'
 ```
 
+If the `name` parameter isn't specified, Clusterizer will apply the agenda to all clusterized modules.
+
 Calling `start()` once an Agenda has been defined will always use the agenda, not the sleep period.
 
 ## License

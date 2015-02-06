@@ -140,14 +140,14 @@ class Clusterized extends EventEmitter
         address: db
         collection: 'clusterizer'
       processEvery: every
-    @agenda.define 'iterate', (job, done) =>
+    @agenda.define "#{@name} - iterate", (job, done) =>
       unless @processing
         @kick ->
           done()
       else
         @log "skipping agenda job because process() is already running"
         done()
-    @agenda.every(every, 'iterate')
+    @agenda.every(every, "#{@name} - iterate")
 
 #
 # Exports
