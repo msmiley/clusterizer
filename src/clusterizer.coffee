@@ -14,11 +14,13 @@ util = require 'util'
 # ### Options
 #
 # - logging [Boolean] Enables logging to util.log
-# - dir [String] Directory of modules to clusterize
+# - file [Array] Array of paths to a single modules
+# - dir [Array] Array of paths to directories of modules to clusterize
 # - npm [Array] Array of npm module names to clusterize
 #
 class Clusterizer extends EventEmitter
   constructor: (@options={}) ->
+
     # Flag used to prevent user code from running in every process
     @isMaster = cluster.isMaster
 
@@ -29,8 +31,11 @@ class Clusterizer extends EventEmitter
     if cluster.isMaster
       @modules = {}
 
+      # load single modules
+      @clusterizeFiles @options.file
+
       # load directory modules
-      @clusterizeDirectory @options.dir
+      @clusterizeDirectories @options.dir
 
       # load npm modules
       @clusterizeNpmModules @options.npm
@@ -74,18 +79,35 @@ class Clusterizer extends EventEmitter
         util.error "Module #{@name} does not have valid process() function"
 
   #
+  # Clusterize single modules which inherit from Clusterized
+  #
+  clusterizeFiles: (files) ->
+    if files
+      for file in files
+        # strip off extension for name
+        name = path.basename file, path.extname(file)
+        if @loadModule file
+          @modules[name] = @fork name, file
+        else
+          util.error "Clusterizer can't find module: #{file}"
+
+  #
   # Clusterize a directory of modules which inherit from Clusterized
   #
-  clusterizeDirectory: (dir) ->
-    if dir
-      util.log "Clusterizing modules in directory: #{dir}" if @options.logging
-      # fork a process for each module in the path
-      require('fs').readdirSync(dir).forEach (file) =>
-        if file.match /\.js|coffee$/
-          # strip off extension for name
-          name = path.basename file, path.extname(file)
-          util.log "forking process to handle #{name}" if @options.logging
-          @modules[name] = @fork name, path.join(dir, file)
+  clusterizeDirectories: (dirs) ->
+    if dirs
+      for dir in dirs
+        util.log "Clusterizing modules in directory: #{dir}" if @options.logging
+        # fork a process for each module in the path
+        require('fs').readdirSync(dir).forEach (file) =>
+          if file.match /\.js|coffee$/
+            # strip off extension for name
+            name = path.basename file, path.extname(file)
+            mpath = path.join(dir, file)
+            if @loadModule mpath
+              @modules[name] = @fork name, mpath
+            else
+              util.error "Clusterizer can't find module: #{mpath}"
 
   #
   # Clusterize a list of installed npm modules which inherit from Clusterized
@@ -95,8 +117,9 @@ class Clusterizer extends EventEmitter
       for mod in list
         # make sure npm module is accessible before forking
         if @loadModule mod
-          util.log "forking process to handle #{mod}" if @options.logging
           @modules[mod] = @fork mod, mod
+        else
+          util.error "Clusterizer can't find npm module: #{mod}"
 
   #
   # Connect to all Clusterized modules for message passing
@@ -136,6 +159,7 @@ class Clusterizer extends EventEmitter
   # Fork a cluster process with the necessary parameters
   #
   fork: (name, mod) ->
+    util.log "Clusterizing #{name}" if @options.logging
     cluster.fork
       name: name
       module: mod
@@ -205,7 +229,7 @@ module.exports = Clusterizer
 main = ->
   clusterizer = new Clusterizer
     logging: true
-    dir: "../test_modules"
+    dir: ["../test_modules"]
 
   if clusterizer.isMaster
     # start all

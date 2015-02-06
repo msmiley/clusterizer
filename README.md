@@ -1,6 +1,6 @@
 # Clusterizer
 
-Clusterizer uses the Node.js cluster API to provide automatic clusterization of either a directory of modules or an array of npm module names.
+Clusterizer uses the Node.js cluster API to provide automatic clusterization of a single module, a directory of modules, or an array of npm module names.
 
 The modules don't need to be performing the same task, as is usually the case with Node.js clusters. Clusterizer includes automatic scheduling of each process worker function using a variety of timing parameters.
 
@@ -22,7 +22,7 @@ $ npm install clusterizer
 
 ## Usage
 
-Look at `test_modules/module1.coffee` for an example module. Modules need to inherit from `Clusterized` and implement at least a `process(callback)` function. The class name (or constructor function name if in js) is irrelevant as long as it is exported as shown below.
+Look at `test_modules/module1.coffee` for an example module. Modules need to inherit from `Clusterized` and implement at least a `process(callback)` function. The class name (or constructor function name if in js) is irrelevant as long as it is a module-level export as shown below.
 
 ```coffee
 { Clusterized } = require 'clusterizer'
@@ -35,13 +35,16 @@ class Worker extends Clusterized
 module.exports = Worker
 ```
 
-Then simply instantiate a `Clusterizer` in your code. See the example `main` function in `clusterizer.coffee`. Use `.isMaster` as a check to prevent your other code from running in every process.
+Then instantiate a `Clusterizer` in your code. See the example `main` function in `clusterizer.coffee`. Use `.isMaster` as a check to prevent your other code from running in every process.
 
 ```coffee
+{ Clusterizer } = require 'clusterizer'
+
 clusterizer = new Clusterizer
   logging: true
-  dir: "../test_modules"
+  dir: ["../test_modules"]
 
+# prevents this from running in every worker process
 if clusterizer.isMaster
   # start all
   clusterizer.start()
@@ -84,7 +87,18 @@ if clusterizer.isMaster
 
 ```
 
-More advanced process scheduling coming soon.
+Other forms of specifying worker modules in the `Clusterizer` options:
+
+```coffee
+file: ["../test_modules/module1.coffee", "../test_modules/module2.coffee"]
+npm: ["clusterizer-test-module1", "clusterizer-test-module1"]
+```
+
+The `file:`, `dir:`, and `npm:` options can be used simultaneously.
+
+
+- Duplicate modules are currently not supported
+- More advanced process scheduling coming soon
 
 ## License
 
