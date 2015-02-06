@@ -21,8 +21,10 @@
   },
   "keywords": [
     "cluster",
+    "clusterize",
     "workers",
-    "multiprocess"
+    "multiprocess",
+    "process"
   ],
   "license": "MIT"
 }
