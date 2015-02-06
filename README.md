@@ -22,7 +22,7 @@ $ npm install clusterizer
 
 ## Usage
 
-Look at test_modules/module1.coffee for an example module. Modules need to inherit from Clusterized and implement at least a `process(callback)` function. The class name (or constructor function name if in js) is irrelevant as long as it is exported as shown below.
+Look at `test_modules/module1.coffee` for an example module. Modules need to inherit from `Clusterized` and implement at least a `process(callback)` function. The class name (or constructor function name if in js) is irrelevant as long as it is exported as shown below.
 
 ```coffee
 { Clusterized } = require 'clusterizer'
@@ -35,7 +35,7 @@ class Worker extends Clusterized
 module.exports = Worker
 ```
 
-Then simply instantiate a `Clusterizer` in your code. See the example `main` function in `clusterizer.coffee`. Use `.isMaster` to prevent your other code from running in every process.
+Then simply instantiate a `Clusterizer` in your code. See the example `main` function in `clusterizer.coffee`. Use `.isMaster` as a check to prevent your other code from running in every process.
 
 ```coffee
 clusterizer = new Clusterizer
