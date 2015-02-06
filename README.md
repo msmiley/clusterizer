@@ -1,8 +1,8 @@
 # Clusterizer
 
-Clusterizer uses the Node.js cluster API to provide automatic clusterization of a single module, a directory of modules, or an array of npm module names.
+Clusterizer provides easy clusterization of a single module, a directory of modules, or an array of npm module names.
 
-The modules don't need to be performing the same task, as is usually the case with Node.js clusters. Clusterizer includes simple sleep-based scheduling as well as advanced scheduling through [Agenda](https://www.npmjs.com/package/agenda).
+The modules don't need to be performing the same task, as is usually the case with Node.js clusters. Clusterizer includes simple sleep-type scheduling as well as advanced scheduling through [Agenda](https://www.npmjs.com/package/agenda).
 
 ## Installation
 
