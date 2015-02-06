@@ -133,6 +133,10 @@ class Clusterizer extends EventEmitter
               util.log "#{name}: #{msg.message}" if @options.logging
               # Emit log message and the module which produced it
               @emit 'log', msg.message, name
+            when 'clusterized.error'
+              util.error msg.message if @options.logging
+              # Emit error message and the module which produced it
+              @emit 'error', msg.message, name
             else
               # Emit the event for capture by user's code along with the name of the module
               @emit msg.event, msg.message, name

@@ -48,7 +48,7 @@ class Clusterized extends EventEmitter
               elapsed = timer.stop(uid)
               @processing = false
               if err
-                @error "error on run #{uid}: #{err} after #{elapsed}ms"
+                @send 'clusterized.error', "error on run #{uid}: #{err} after #{elapsed}ms"
               else
                 @log "completed run #{uid}, took: #{elapsed}ms"
               @log "sleeping for: #{@moduleSleep} ms"
@@ -85,7 +85,7 @@ class Clusterized extends EventEmitter
         elapsed = timer.stop(uid)
         @processing = false
         if err
-          @error "error on kick ##{uid}: #{err} after #{elapsed}ms"
+          @send 'clusterized.error', "error on kick ##{uid}: #{err} after #{elapsed}ms"
         else
           @log "completed kick ##{uid}, took: #{elapsed}ms"
         callback() if callback
