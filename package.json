@@ -16,6 +16,7 @@
     "jasmine-node": "^1.14.5"
   },
   "dependencies": {
+    "agenda": "^0.6.27",
     "metrics-timer": "^0.1.0",
     "node-uuid": "^1.4.2"
   },

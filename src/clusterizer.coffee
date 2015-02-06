@@ -213,6 +213,31 @@ class Clusterizer extends EventEmitter
       @send name, 'clusterized.kill'
 
   #
+  # Set a simple sleep backoff time for the module in ms
+  #
+  setSleep: (sleep, name) ->
+    if typeof(sleep) is 'number'
+      if name is undefined
+        @broadcast 'clusterized.sleep', sleep
+      else if @modules[name]
+        @send name, 'clusterized.sleep', sleep
+
+  #
+  # Advanced scheduling using [Agenda](https://www.npmjs.com/package/agenda), provide the MongoDb
+  # collection to use in the form 'localhost:27017/clusterizer' and the `every` parameter in any
+  # form which Agenda supports, e.g. '3 minutes'/'*/3 * * * *'
+  #
+  setAgenda: (db, every, name) ->
+    if name is undefined
+      @broadcast 'clusterized.agenda',
+        db: db
+        every: every
+    else if @modules[name]
+      @send name, 'clusterized.agenda',
+        db: db
+        every: every
+
+  #
   # Enable logging using util.log
   #
   enableLogging: ->
@@ -232,6 +257,15 @@ main = ->
     dir: ["../test_modules"]
 
   if clusterizer.isMaster
+
+    # modify sleep backoff time for all
+    clusterizer.setSleep 500
+    # modify sleep backoff for specific module
+    clusterizer.setSleep 500, 'module2'
+
+    # set agenda for all
+    clusterizer.setAgenda 'localhost:27017/test', '3 seconds'
+
     # start all
     clusterizer.start()
 

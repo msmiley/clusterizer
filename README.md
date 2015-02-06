@@ -2,9 +2,7 @@
 
 Clusterizer uses the Node.js cluster API to provide automatic clusterization of a single module, a directory of modules, or an array of npm module names.
 
-The modules don't need to be performing the same task, as is usually the case with Node.js clusters. Clusterizer includes automatic scheduling of each process worker function using a variety of timing parameters.
-
-Warning: work-in-progress, working for simple sleep timing
+The modules don't need to be performing the same task, as is usually the case with Node.js clusters. Clusterizer includes simple sleep-based scheduling as well as advanced scheduling through [Agenda](https://www.npmjs.com/package/agenda).
 
 ## Installation
 
@@ -17,7 +15,8 @@ $ npm install clusterizer
 - automatic process management
 - messaging to/from each process
 - log aggregation to master process
-- scheduling for process worker function
+- built-in sleep-type scheduling for process worker function
+- integration with [Agenda](https://www.npmjs.com/package/agenda) for advanced scheduling
 - graceful shutdown
 
 ## Usage
@@ -44,9 +43,22 @@ clusterizer = new Clusterizer
   logging: true
   dir: ["../test_modules"]
 
-# prevents this from running in every worker process
 if clusterizer.isMaster
-  # start all
+
+  # example message handler
+  clusterizer.on 'echo', (msg, module) ->
+    console.log "\nGot #{msg} from #{module}\n"
+
+  # modify sleep backoff time for all
+  clusterizer.setSleep 500
+
+  # modify sleep backoff for specific module
+  clusterizer.setSleep 500, 'module2'
+
+  # set agenda for all
+  clusterizer.setAgenda 'localhost:27017/test', '3 seconds'
+
+  # start all (prefers Agenda mode if an agenda was set)
   clusterizer.start()
 
   # example broadcast
@@ -59,10 +71,6 @@ if clusterizer.isMaster
     clusterizer.send "module2", "echo", "call me back"
   , 4000
 
-  # example message handler
-  clusterizer.on 'echo', (msg, module) ->
-    console.log "\nGot #{msg} from #{module}\n"
-
   # stops module1
   setTimeout ->
     clusterizer.stop('module1')
@@ -71,17 +79,17 @@ if clusterizer.isMaster
   # stops all
   setTimeout ->
     clusterizer.stop()
-  , 6000
+  , 8000
 
   # restart all
   setTimeout ->
     clusterizer.start()
-  , 8000
+  , 10000
 
   # kill all
   setTimeout ->
     clusterizer.kill()
-  , 10000
+  , 12000
 
   # ... your code ...
 
@@ -96,9 +104,21 @@ npm: ["clusterizer-test-module1", "clusterizer-test-module1"]
 
 The `file:`, `dir:`, and `npm:` options can be used simultaneously.
 
-
 - Duplicate modules are currently not supported
-- More advanced process scheduling coming soon
+
+### Advanced Scheduling
+
+```coffee
+setAgenda(database, every, name)
+```
+
+Use `setAgenda` to define a fuzzy execution frequency. Clusterizer uses [Agenda](https://www.npmjs.com/package/agenda) behind the scenes so the `database` and `every` parameters are what Agenda expects. For example, something like
+
+```coffee
+clusterizer.setAgenda 'localhost:27017/test', '3 seconds', 'module1'
+```
+
+Calling `start()` once an Agenda has been defined will always use the agenda, not the sleep period.
 
 ## License
 
