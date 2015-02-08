@@ -1,6 +1,6 @@
 {
   "name": "clusterizer",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "author": "Mike Smiley <mikesmiley@me.com>",
   "url": "https://github.com/msmiley/clusterizer",
   "main": "./lib",
