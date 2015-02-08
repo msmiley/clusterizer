@@ -117,7 +117,7 @@ class Clusterized extends EventEmitter
       when 'clusterized.sleep'
         @moduleSleep = msg.message
       when 'clusterized.agenda'
-        @startAgenda msg.message.db, msg.message.every
+        @setAgenda msg.message.db, msg.message.every
       else # self-emit for user's code
         @emit msg.event, msg.message
 
@@ -130,7 +130,7 @@ class Clusterized extends EventEmitter
   #
   # Agenda integration, see `Clusterizer` docs for parameters
   #
-  startAgenda: (db, every) ->
+  setAgenda: (db, every) ->
     @log "Agenda scheduling process every #{every}"
     # Set up Agenda. Use the every parameter for processEvery as well
     # since this is the only job this Agenda instance will ever have.

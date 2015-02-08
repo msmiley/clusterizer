@@ -122,6 +122,8 @@ If the `name` parameter isn't specified, Clusterizer will apply the agenda to al
 
 Calling `start()` once an Agenda has been defined will always use the agenda, not the sleep period.
 
+A module can call `setAgenda()` on itself if the db address is fixed or handed in some other way. This allows each module to specify its preferred interval.
+
 ## License
 
   [MIT](LICENSE)
