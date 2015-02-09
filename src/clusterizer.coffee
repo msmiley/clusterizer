@@ -4,6 +4,10 @@
 # The Clusterizer manages execution and communication with a set of Modules which inherit from Clusterized.
 # All setup is performed through the options parameter to the constructor.
 #
+# Clusterizer emits 'error' on behalf of clusterized modules.
+# 'error' is a special-case event in Node.js which needs to be handled or an exception will be thrown
+# at run time.
+#
 
 fs = require 'fs'
 path = require 'path'
@@ -29,6 +33,9 @@ class Clusterizer extends EventEmitter
 
     # Master Clusterizer
     if cluster.isMaster
+      # set process title
+      process.title = "clusterizer"
+
       @modules = {}
 
       # load single modules
@@ -52,7 +59,7 @@ class Clusterizer extends EventEmitter
             # emit event that a module died
             @emit 'died', name
 
-    # Clusterized process
+    # Clusterized module process
     else
       # set process name to match the name given to clusterizer
       @name = process.env.name
@@ -61,7 +68,7 @@ class Clusterizer extends EventEmitter
       # get the name of the module this process will run
       @moduleName = process.env.module
 
-      util.log "starting clusterized module: #{@moduleName}" if @options.logging
+      util.log "Clusterized module: #{@moduleName}" if @options.logging
 
       # load and instantiate the module
       Module = @loadModule @moduleName
@@ -69,10 +76,11 @@ class Clusterizer extends EventEmitter
       # make sure module has a process() function
       if typeof(Module.prototype.process) is 'function'
         @module = new Module()
+
         # set module parameters
         @module.name = @name
 
-        # pass messages received from master to the Clusterized module
+        # pass messages received from master to the Clusterized base class
         process.on 'message', (msg) =>
           @module.recv msg
       else
