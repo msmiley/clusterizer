@@ -15,8 +15,8 @@ $ npm install clusterizer
 ## Features
 
 - automatic process forking
-- messaging to/from each module
-- log aggregation to master process
+- events to/from each module
+- log/error aggregation to master process
 - built-in sleep-type scheduling
 - integration with [Agenda](https://www.npmjs.com/package/agenda) for advanced scheduling
 - graceful shutdown
@@ -36,7 +36,7 @@ class Worker extends Clusterized
 module.exports = Worker
 ```
 
-Then instantiate a `Clusterizer` in your code. See the example `main` function in `clusterizer.coffee`. Use `.isMaster` as a check to prevent your other code from running in every process.
+Then instantiate a `Clusterizer` in your code with an options object. See the example `main` function in `clusterizer.coffee`. Use `.isMaster` as a check to prevent your other code from running in every process.
 
 ```coffee
 { Clusterizer } = require 'clusterizer'
@@ -74,7 +74,7 @@ if clusterizer.isMaster
   # broadcast to all modules
   clusterizer.broadcast "echo", "test broadcasted message"
 
-  # example message to single module
+  # message to single module
   clusterizer.send "module2", "echo", "call me back"
 
   # stops module1
