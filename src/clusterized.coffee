@@ -2,12 +2,13 @@
 timer = require 'metrics-timer'
 uuid = require 'node-uuid'
 Agenda = require 'agenda'
+humanInterval = require 'human-interval'
 
 { EventEmitter } = require 'events'
 
 #
 # Base class for all clusterized modules. Provides facilities
-# for modules to log, throw errors, time their execution, etc.
+# for modules to log, send/receive events, etc.
 #
 class Clusterized extends EventEmitter
 
@@ -102,7 +103,7 @@ class Clusterized extends EventEmitter
         message: msg
 
   #
-  # Handle some messages, emit the rest for module to handle
+  # Handle some built-in messages, emit the rest for module to handle
   #
   recv: (msg) ->
     switch msg.event
@@ -118,7 +119,7 @@ class Clusterized extends EventEmitter
         @moduleSleep = msg.message
       when 'clusterized.agenda'
         @setAgenda msg.message.db, msg.message.every
-      else # self-emit for user's code
+      else # emit for user's code
         @emit msg.event, msg.message
 
   #
@@ -132,14 +133,18 @@ class Clusterized extends EventEmitter
   #
   setAgenda: (db, every) ->
     @log "Agenda scheduling process every #{every}"
-    # Set up Agenda. Use the every parameter for processEvery as well
-    # since this is the only job this Agenda instance will ever have.
+    # set the processEvery parameter to be the same as the execution frequency
+    # up to 1 hour. After that, have Agenda check every hour.
+    processEvery = every
+    if humanInterval(every) > 3600000
+      processEvery = "1 hour"
+    # Set up Agenda.
     @agenda = new Agenda
       name: @name
       db:
         address: db
         collection: 'clusterizer'
-      processEvery: every
+      processEvery: processEvery
     @agenda.define "#{@name} - iterate", (job, done) =>
       unless @processing
         @kick ->
