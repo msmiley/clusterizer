@@ -1,8 +1,10 @@
 # Clusterizer
 
-Clusterizer provides easy clusterization of a single module, a directory of modules, or an array of npm module names.
+Instant clusterization of an array of module paths, a directory of modules, or an array of npm module names.
 
-The modules don't need to be performing the same task, as is usually the case with Node.js clusters. Clusterizer includes simple sleep-type scheduling as well as advanced scheduling through [Agenda](https://www.npmjs.com/package/agenda).
+Modules don't need to be performing the same task, as is usually the case with Node.js clusters. Clusterizer excels at offloading long-running operations into another process and scheduling them intelligently.
+
+Clusterizer includes built-in sleep-type scheduling as well as advanced scheduling through [Agenda](https://www.npmjs.com/package/agenda).
 
 ## Installation
 
@@ -12,16 +14,16 @@ $ npm install clusterizer
 
 ## Features
 
-- automatic process management
-- messaging to/from each process
+- automatic process forking
+- messaging to/from each module
 - log aggregation to master process
-- built-in sleep-type scheduling for process worker function
+- built-in sleep-type scheduling
 - integration with [Agenda](https://www.npmjs.com/package/agenda) for advanced scheduling
 - graceful shutdown
 
 ## Usage
 
-Look at `test_modules/module1.coffee` for an example module. Modules need to inherit from `Clusterized` and implement at least a `process(callback)` function. The class name (or constructor function name if in js) is irrelevant as long as it is a module-level export as shown below.
+See `test_modules/module1.coffee` for an example module. Modules need to inherit from `Clusterized` and implement at least a `process(callback)` function. The class name (or constructor function name if in js) is irrelevant as long as it is a module-level export as shown below.
 
 ```coffee
 { Clusterized } = require 'clusterizer'
@@ -45,7 +47,15 @@ clusterizer = new Clusterizer
 
 if clusterizer.isMaster
 
-  # example message handler
+  # example log handler
+  clusterizer.on 'log', (msg, module) ->
+    console.log "LOG : #{module} : #{msg}"
+
+  # example error handler
+  clusterizer.on 'error', (msg, module) ->
+    console.error "ERROR : #{module} : #{msg}"
+
+  # example user-defined message handler
   clusterizer.on 'echo', (msg, module) ->
     console.log "\nGot #{msg} from #{module}\n"
 
@@ -58,38 +68,26 @@ if clusterizer.isMaster
   # set agenda for all
   clusterizer.setAgenda 'localhost:27017/test', '3 seconds'
 
-  # start all (prefers Agenda mode if an agenda was set)
+  # start all (uses Agenda mode if an agenda was set)
   clusterizer.start()
 
-  # example broadcast
-  setTimeout ->
-    clusterizer.broadcast "echo", "test broadcasted message"
-  , 2000
+  # broadcast to all modules
+  clusterizer.broadcast "echo", "test broadcasted message"
 
   # example message to single module
-  setTimeout ->
-    clusterizer.send "module2", "echo", "call me back"
-  , 4000
+  clusterizer.send "module2", "echo", "call me back"
 
   # stops module1
-  setTimeout ->
-    clusterizer.stop('module1')
-  , 6000
+  clusterizer.stop 'module1'
 
   # stops all
-  setTimeout ->
-    clusterizer.stop()
-  , 8000
+  clusterizer.stop()
 
   # restart all
-  setTimeout ->
-    clusterizer.start()
-  , 10000
+  clusterizer.start()
 
   # kill all
-  setTimeout ->
-    clusterizer.kill()
-  , 12000
+  clusterizer.kill()
 
   # ... your code ...
 
@@ -102,9 +100,11 @@ file: ["../test_modules/module1.coffee", "../test_modules/module2.coffee"]
 npm: ["clusterizer-test-module1", "clusterizer-test-module1"]
 ```
 
-The `file:`, `dir:`, and `npm:` options can be used simultaneously.
+#### Note
 
-- Duplicate modules are currently not supported
+- the `file:`, `dir:`, and `npm:` options can be used simultaneously
+- duplicate modules are currently not supported
+- the 'error' event is emitted, so it needs to have a listener or an unspecified error will be thrown
 
 ### Advanced Scheduling
 
@@ -120,9 +120,9 @@ clusterizer.setAgenda 'localhost:27017/test', '3 seconds', 'module1'
 
 If the `name` parameter isn't specified, Clusterizer will apply the agenda to all clusterized modules.
 
-Calling `start()` once an Agenda has been defined will always use the agenda, not the sleep period.
+Calling `start()` once an Agenda has been defined for a module will always use the agenda, not the sleep period.
 
-A module can call `setAgenda()` on itself if the db address is fixed or handed in some other way. This allows each module to specify its preferred interval.
+A module can call `setAgenda()` on itself if the db address is fixed or handed in using a message. This allows each module to specify its preferred schedule.
 
 ## License
 
