@@ -133,10 +133,13 @@ class Clusterized extends EventEmitter
   #
   setAgenda: (db, every) ->
     @log "Agenda scheduling process every #{every}"
-    # set the processEvery parameter to be the same as the execution frequency
-    # up to 1 hour. After that, have Agenda check every hour.
-    processEvery = every
-    if humanInterval(every) > 3600000
+    # set optimal processEvery based on 'every' parameter
+    processEvery = humanInterval(every) # convert to ms
+    if processEvery > 1000 and processEvery <= 3600000 # 1 second to 1 hour
+      processEvery /= 4 # 1/4 the ms
+    if processEvery > 3600000 and processEvery <= 86400000 # 1 hour to 1 day
+      processEvery = "30 minutes"
+    if processEvery > 86400000 # day and above, check every hour
       processEvery = "1 hour"
     # Set up Agenda.
     @agenda = new Agenda
