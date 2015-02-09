@@ -150,10 +150,13 @@ class Clusterizer extends EventEmitter
               @emit msg.event, msg.message, name
 
   #
-  # Send message to the specified module
+  # Send message to the specified module or all modules if name is undefined. message should be "" or
+  # null when only the event name is needed.
   #
-  send: (name, event, message) ->
-    if @modules[name]
+  send: (event, message, name) ->
+    if name is undefined
+      @broadcast event, message
+    else if @modules[name]
       @modules[name].send
         event: event
         message: message
@@ -192,47 +195,32 @@ class Clusterizer extends EventEmitter
   # Start a module or all modules if a name is not provided
   #
   start: (name) ->
-    if name is undefined
-      @broadcast 'clusterized.start'
-    else if @modules[name]
-      @send name, 'clusterized.start'
+    @send 'clusterized.start', null, name
 
   #
   # Kick a module to process once, or all modules if a name is not provided
   #
   kick: (name) ->
-    if name is undefined
-      @broadcast 'clusterized.kick'
-    else if @modules[name]
-      @send name, 'clusterized.kick'
+    @send 'clusterized.kick', null, name
 
   #
   # Stop a module or all modules if a name is not provided
   #
   stop: (name) ->
-    if name is undefined
-      @broadcast 'clusterized.stop'
-    else if @modules[name]
-      @send name, 'clusterized.stop'
+    @send 'clusterized.stop', null, name
 
   #
   # Kill a module or all modules if a name is not provided
   #
   kill: (name) ->
-    if name is undefined
-      @broadcast 'clusterized.kill'
-    else if @modules[name]
-      @send name, 'clusterized.kill'
+    @send 'clusterized.kill', null, name
 
   #
   # Set a simple sleep backoff time for the module in ms
   #
   setSleep: (sleep, name) ->
     if typeof(sleep) is 'number'
-      if name is undefined
-        @broadcast 'clusterized.sleep', sleep
-      else if @modules[name]
-        @send name, 'clusterized.sleep', sleep
+      @send 'clusterized.sleep', sleep, name
 
   #
   # Advanced scheduling using [Agenda](https://www.npmjs.com/package/agenda), provide the MongoDb
@@ -240,14 +228,10 @@ class Clusterizer extends EventEmitter
   # form which Agenda supports, e.g. '3 minutes'/'*/3 * * * *'
   #
   setAgenda: (db, every, name) ->
-    if name is undefined
-      @broadcast 'clusterized.agenda',
-        db: db
-        every: every
-    else if @modules[name]
-      @send name, 'clusterized.agenda',
-        db: db
-        every: every
+    @send 'clusterized.agenda',
+      db: db
+      every: every
+    , name
 
   #
   # Enable logging using util.log
@@ -283,12 +267,12 @@ main = ->
 
     # example broadcast
     setTimeout ->
-      clusterizer.broadcast "echo", "test broadcasted message"
+      clusterizer.send "echo", "test broadcasted message"
     , 2000
 
     # example message to single module
     setTimeout ->
-      clusterizer.send "module2", "echo", "call me back"
+      clusterizer.send "echo", "call me back", "module2"
     , 4000
 
     # example message handler

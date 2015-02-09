@@ -68,14 +68,22 @@ if clusterizer.isMaster
   # set agenda for all
   clusterizer.setAgenda 'localhost:27017/test', '3 seconds'
 
-  # start all (uses Agenda mode if an agenda was set)
+  # set agenda for one
+  clusterizer.setAgenda 'localhost:27017/test', '3 seconds', 'module1'
+
+  # start all (uses Agenda mode for any module which has an agenda set)
   clusterizer.start()
 
-  # broadcast to all modules
+  # broadcast event to all modules
+  clusterizer.send "echo", "test broadcasted message"
+  # or
   clusterizer.broadcast "echo", "test broadcasted message"
 
-  # message to single module
-  clusterizer.send "module2", "echo", "call me back"
+  # event with message to single module
+  clusterizer.send "echo", "call me back", "module2"
+
+  # event with no message to single modules
+  clusterizer.send "echo", null, "module2"
 
   # stops module1
   clusterizer.stop 'module1'
