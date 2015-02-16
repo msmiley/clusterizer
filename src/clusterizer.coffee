@@ -142,9 +142,13 @@ class Clusterizer extends EventEmitter
               # Emit log message and the module which produced it
               @emit 'log', msg.message, name
             when 'clusterized.error'
-              util.error msg.message if @options.logging
-              # Emit error message and the module which produced it
-              @emit 'error', msg.message, name
+              util.error "#{name}: #{msg.name}: #{msg.message}" if @options.logging
+              # Emit error message with an object similar to Error and the module which produced it
+              err =
+                name: msg.name
+                message: msg.message
+                stack: msg.stack
+              @emit 'error', err, name
             else
               # Emit the event for capture by user's code along with the name of the module
               @emit msg.event, msg.message, name
@@ -277,7 +281,10 @@ main = ->
 
     # example message handler
     clusterizer.on 'echo', (msg, module) ->
-      console.log "\nGot #{msg} from #{module}\n"
+      console.log "main> Got #{msg} from #{module}"
+
+    clusterizer.on 'error', (err, module) ->
+      console.log "main> Error in #{module}: #{err.stack}"
 
     # stops module1
     setTimeout ->

@@ -45,18 +45,20 @@ class Clusterized extends EventEmitter
             timer.start(uid)
             # call module with a callback for it to call on exit
             @processing = true
-            @process (err) =>
-              elapsed = timer.stop(uid)
-              @processing = false
-              if err
-                @send 'clusterized.error', "error on run #{uid}: #{err} after #{elapsed}ms"
-              else
-                @log "completed run #{uid}, took: #{elapsed}ms"
-              @log "sleeping for: #{@moduleSleep} ms"
-              setTimeout ->
-                iterate()
-              , @moduleSleep
-
+            try
+              @process (err) =>
+                elapsed = timer.stop(uid)
+                @processing = false
+                if err
+                  @send 'clusterized.error', "error on run #{uid}: #{err} after #{elapsed}ms"
+                else
+                  @log "completed run #{uid}, took: #{elapsed}ms"
+                @log "sleeping for: #{@moduleSleep} ms"
+                setTimeout ->
+                  iterate()
+                , @moduleSleep
+            catch e
+              @error e
       # kick off iteration loop
       iterate()
 
@@ -82,14 +84,17 @@ class Clusterized extends EventEmitter
       timer.start(uid)
       # call module with a callback for it to call on exit
       @processing = true
-      @process (err) =>
-        elapsed = timer.stop(uid)
-        @processing = false
-        if err
-          @send 'clusterized.error', "error on kick ##{uid}: #{err} after #{elapsed}ms"
-        else
-          @log "completed kick ##{uid}, took: #{elapsed}ms"
-        callback() if callback
+      try
+        @process (err) =>
+          elapsed = timer.stop(uid)
+          @processing = false
+          if err
+            @send 'clusterized.error', "error on kick ##{uid}: #{err} after #{elapsed}ms"
+          else
+            @log "completed kick ##{uid}, took: #{elapsed}ms"
+          callback() if callback
+      catch e
+        @error e
     else
       @log "skipping kick because process() is already running"
 
@@ -127,6 +132,16 @@ class Clusterized extends EventEmitter
   #
   log: (msg) ->
     @send 'clusterized.log', msg
+
+  #
+  # Send an error back to the Master
+  #
+  error: (e) ->
+    process.send
+      event: 'clusterized.error'
+      name: e.name
+      message: e.message
+      stack: e.stack
 
   #
   # Agenda integration, see `Clusterizer` docs for parameters
