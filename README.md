@@ -51,9 +51,10 @@ if clusterizer.isMaster
   clusterizer.on 'log', (msg, module) ->
     console.log "LOG : #{module} : #{msg}"
 
-  # example error handler
-  clusterizer.on 'error', (msg, module) ->
-    console.error "ERROR : #{module} : #{msg}"
+  # example error handler, err object contains fields
+  # similar to Error, i.e. name, message, stack
+  clusterizer.on 'error', (err, module) ->
+    console.error "ERROR : #{module} : #{err.stack}"
 
   # example user-defined message handler
   clusterizer.on 'echo', (msg, module) ->
@@ -113,6 +114,7 @@ npm: ["clusterizer-test-module1", "clusterizer-test-module1"]
 - the `file:`, `dir:`, and `npm:` options can be used simultaneously
 - duplicate modules are currently not supported
 - the 'error' event is emitted, so it needs to have a listener or an unspecified error will be thrown
+- any errors thrown in clusterized modules will be emitted by the clusterizer with a full stack trace
 
 ### Advanced Scheduling
 
