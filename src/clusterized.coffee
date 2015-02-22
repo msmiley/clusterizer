@@ -37,28 +37,12 @@ class Clusterized extends EventEmitter
       # while ensuring there is a sleep period
       iterate = =>
         unless @stopped
-          if @processing
-            @log "skipping iteration because process() is already running"
-          else
-            uid = uuid.v1() # uid for this iteration
-            @log "starting run: #{uid}"
-            timer.start(uid)
-            # call module with a callback for it to call on exit
-            @processing = true
-            try
-              @process (err) =>
-                elapsed = timer.stop(uid)
-                @processing = false
-                if err
-                  @send 'clusterized.error', "error on run #{uid}: #{err} after #{elapsed}ms"
-                else
-                  @log "completed run #{uid}, took: #{elapsed}ms"
-                @log "sleeping for: #{@moduleSleep} ms"
-                setTimeout ->
-                  iterate()
-                , @moduleSleep
-            catch e
-              @error e
+          @iteration =>
+            @log "sleeping for: #{@moduleSleep} ms"
+            setTimeout ->
+              iterate()
+            , @moduleSleep
+
       # kick off iteration loop
       iterate()
 
@@ -77,10 +61,10 @@ class Clusterized extends EventEmitter
   #
   # Perform one iteration when this function is called
   #
-  kick: (callback) ->
+  iteration: (callback) ->
     unless @processing
       uid = uuid.v1() # uid for this iteration
-      @log "kicking module, run ##{uid}"
+      @log "module iteration ##{uid}"
       timer.start(uid)
       # call module with a callback for it to call on exit
       @processing = true
@@ -89,14 +73,14 @@ class Clusterized extends EventEmitter
           elapsed = timer.stop(uid)
           @processing = false
           if err
-            @send 'clusterized.error', "error on kick ##{uid}: #{err} after #{elapsed}ms"
+            @send 'clusterized.error', "error on iteration ##{uid}: #{err} after #{elapsed}ms"
           else
-            @log "completed kick ##{uid}, took: #{elapsed}ms"
+            @log "completed iteration ##{uid}, took: #{elapsed}ms"
           callback() if callback
       catch e
         @error e
     else
-      @log "skipping kick because process() is already running"
+      @log "skipping iteration because process() is already running"
 
   #
   # Send generic message to Master process
@@ -115,7 +99,7 @@ class Clusterized extends EventEmitter
       when 'clusterized.start'
         @start()
       when 'clusterized.kick'
-        @kick()
+        @iteration()
       when 'clusterized.stop'
         @stop()
       when 'clusterized.kill'
@@ -165,7 +149,7 @@ class Clusterized extends EventEmitter
       processEvery: processEvery
     @agenda.define "#{@name} - iterate", (job, done) =>
       unless @processing
-        @kick ->
+        @iteration ->
           done()
       else
         @log "skipping agenda job because process() is already running"
