@@ -70,7 +70,8 @@ class Clusterized extends EventEmitter
       @processing = true
       try
         @process (err) =>
-          elapsed = timer.stop(uid)
+          if timer
+            elapsed = timer.stop(uid)
           @processing = false
           if err
             @send 'clusterized.error', "error on iteration ##{uid}: #{err} after #{elapsed}ms"

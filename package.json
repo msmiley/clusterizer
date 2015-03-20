@@ -1,14 +1,14 @@
 {
   "name": "clusterizer",
   "version": "0.3.3",
-  "author": "Mike Smiley <mikesmiley@me.com>",
+  "author": "Mike Smiley <msmiley@alumni.rice.edu>",
   "url": "https://github.com/msmiley/clusterizer",
   "main": "./lib",
   "repository": "msmiley/clusterizer.git",
   "scripts": {
     "docs": "cake docs",
-    "prepublish": "cake build test docs",
-    "test": "cake build test"
+    "prepublish": "cake build && cake test docs",
+    "test": "cake build && cake test"
   },
   "devDependencies": {
     "docco": "*",
